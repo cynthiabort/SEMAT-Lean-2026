@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Ler, traduzir, formalizar · SEMAT Lean</title>
+  <style>
+    :root {
+      --fundo: #f5f3ed;
+      --papel: #fffefa;
+      --texto: #172d3b;
+      --secundario: #52616a;
+      --linha: #d8ddd9;
+      --azul: #214f68;
+      --verde: #176039;
+      --verde-claro: #edf8ef;
+      --vermelho: #a42b30;
+      --vermelho-claro: #fff0ed;
+      --destaque: #a34726;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; color: var(--texto); background: var(--fundo); font: 17px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: default; opacity: .45; }
+    :focus-visible { outline: 3px solid #2578ac; outline-offset: 4px; }
+    .pagina { max-width: 1020px; margin: 0 auto; padding: 30px 28px 24px; }
+    .identidade { display: flex; justify-content: space-between; align-items: center; gap: 16px; color: var(--secundario); font-size: 13px; }
+    .marca { color: var(--azul); font-weight: 800; letter-spacing: .16em; }
+    .abertura { display: flex; justify-content: space-between; align-items: center; gap: 28px; margin: 26px 0 20px; }
+    h1 { font: 500 clamp(32px, 4.5vw, 46px)/1.12 Georgia, "Times New Roman", serif; letter-spacing: -.035em; margin: 0 0 10px; }
+    .introducao { margin: 0; color: var(--secundario); font-size: 16px; }
+    .placar { flex-shrink: 0; border-left: 2px solid var(--linha); padding-left: 24px; }
+    .placar strong { display: block; font-size: 30px; line-height: 1.15; font-weight: 650; }
+    .placar span { display: block; font-size: 13px; color: var(--secundario); }
+    .navegacao { display: flex; gap: 8px; margin-bottom: 18px; }
+    .numero { flex: 1; min-width: 0; min-height: 44px; border: 1px solid var(--linha); border-radius: 8px; background: transparent; color: var(--texto); font-size: 15px; font-weight: 650; }
+    .numero[aria-current="step"] { outline: 2px solid var(--azul); outline-offset: 2px; }
+    .numero.correta { color: var(--verde); border-color: #77aa86; background: var(--verde-claro); }
+    .numero.incorreta { color: var(--vermelho); border-color: #d48e8a; background: var(--vermelho-claro); }
+    .simbolos { color: var(--secundario); font-size: 14px; margin-bottom: 20px; }
+    .simbolos summary { width: fit-content; cursor: pointer; }
+    .simbolos p { margin: 8px 0 0; max-width: 80ch; }
+    code, pre { font-family: "SFMono-Regular", Consolas, "DejaVu Sans Mono", monospace; }
+    .cartao { background: var(--papel); border: 1px solid var(--linha); border-radius: 18px; padding: 28px; box-shadow: 0 10px 35px #172d3b06; }
+    .etiqueta { margin: 0 0 12px; font-size: 12px; font-weight: 750; text-transform: uppercase; letter-spacing: .09em; color: var(--destaque); }
+    h2 { font-size: 23px; font-weight: 600; line-height: 1.4; margin: 0 0 18px; }
+    h2:focus { outline: none; }
+    pre { font-size: 15px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+    .enunciado-lean { background: #eef2f3; border-left: 3px solid #6b8998; padding: 18px 20px; border-radius: 0 8px 8px 0; margin-bottom: 22px; }
+    fieldset { padding: 0; margin: 0; border: 0; min-width: 0; }
+    legend { font-size: 14px; color: var(--secundario); margin-bottom: 12px; padding: 0; }
+    .alternativas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .alternativa { display: flex; align-items: flex-start; gap: 10px; padding: 16px; min-height: 74px; border: 1px solid var(--linha); border-radius: 10px; cursor: pointer; transition: background .12s, border-color .12s; }
+    .alternativa:hover { border-color: var(--azul); background: #f4f7f7; }
+    .alternativa:has(input:focus-visible) { outline: 3px solid #2578ac; outline-offset: 3px; }
+    .alternativa input { width: 17px; height: 17px; margin: 5px 0 0; flex-shrink: 0; accent-color: var(--azul); }
+    .alternativa .letra { color: var(--secundario); font-size: 13px; font-weight: 750; padding-top: 2px; }
+    .alternativa .conteudo { min-width: 0; font-size: 16px; }
+    .alternativa code.conteudo { font-size: 14px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .alternativa.correta { border: 2px solid var(--verde); padding: 15px; background: var(--verde-claro); }
+    .alternativa.incorreta { border: 2px solid var(--vermelho); padding: 15px; background: var(--vermelho-claro); }
+    .alternativa.correta input { accent-color: var(--verde); }
+    .alternativa.incorreta input { accent-color: var(--vermelho); }
+    .retorno { margin: 18px 0 0; padding: 14px 16px; border-radius: 9px; font-size: 15px; min-height: 77px; color: var(--secundario); background: #f5f5ef; }
+    .retorno strong { display: block; margin-bottom: 3px; }
+    .retorno.correta { background: var(--verde-claro); color: var(--verde); }
+    .retorno.incorreta { background: var(--vermelho-claro); color: var(--vermelho); }
+    .acoes { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-top: 22px; }
+    .botao { min-height: 44px; padding: 10px 18px; border-radius: 8px; border: 1px solid var(--linha); background: transparent; color: var(--texto); font-weight: 600; font-size: 15px; }
+    .botao:hover:not(:disabled) { background: #edf1f2; }
+    .botao.principal { background: var(--azul); border-color: var(--azul); color: white; }
+    .botao.principal:hover { background: #163b50; }
+    .resultado-numero { font-size: 56px; font-weight: 650; line-height: 1; margin: 22px 0 12px; letter-spacing: -.04em; }
+    .resultado-texto { color: var(--secundario); }
+    .resultado-lista { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 24px 0; }
+    .revisao { text-align: left; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--linha); background: transparent; color: var(--texto); font-size: 14px; }
+    .revisao.correta { background: var(--verde-claro); color: var(--verde); }
+    .revisao.incorreta { background: var(--vermelho-claro); color: var(--vermelho); }
+    footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding-top: 22px; color: var(--secundario); font-size: 12px; }
+    noscript p { padding: 20px; background: var(--vermelho-claro); color: var(--vermelho); }
+    @media (max-width: 700px) {
+      body { font-size: 16px; }
+      .pagina { padding: 22px 16px; }
+      .identidade { font-size: 11px; }
+      .abertura { align-items: flex-start; gap: 12px; }
+      .placar { padding-left: 12px; margin-top: 5px; }
+      .placar strong { font-size: 24px; }
+      .placar span { font-size: 11px; }
+      .introducao { font-size: 14px; }
+      .navegacao { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; }
+      .cartao { padding: 20px 16px; border-radius: 12px; }
+      h2 { font-size: 20px; }
+      .alternativas, .resultado-lista { grid-template-columns: 1fr; }
+      .enunciado-lean { padding: 14px; }
+      .acoes { flex-wrap: wrap; }
+      .botao { flex-grow: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="pagina">
+    <header>
+      <div class="identidade"><span class="marca">SEMAT · LEAN</span><span>Pausa após a seção 8</span></div>
+      <div class="abertura">
+        <div><h1>Ler, traduzir, formalizar.</h1><p class="introducao">10 questões para ligar a linguagem matemática ao Lean.<br>Escolha uma alternativa. Você pode tentar novamente.</p></div>
+        <div class="placar" aria-label="Progresso"><strong id="placar">0 / 10</strong><span>questões corretas</span></div>
+      </div>
+      <nav id="navegacao" class="navegacao" aria-label="Ir para uma questão"></nav>
+      <details class="simbolos">
+        <summary>Consultar símbolos e notações</summary>
+        <p><code>Nat</code>: naturais · <code>Real</code>: reais · <code>∀</code>: para todo · <code>∃</code>: existe · <code>∧</code>: e · <code>→</code>: implica, entre proposições · <code>≠</code>: diferente · <code>¬</code>: não · <code>|x|</code>: valor absoluto de x · <code>Set Nat</code>: conjuntos de naturais · <code>∈</code>: pertence · <code>∉</code>: não pertence · <code>⊆</code>: está contido em.</p>
+        <p>Escolha a tradução direta, preservando os domínios, as hipóteses e a ordem dos quantificadores. Uma alternativa pode ser verdadeira e ainda expressar outra afirmação.</p>
+        <p>Um argumento como <code>(n : Nat)</code> representa um natural qualquer. Nos trechos com <code>sorry</code>, o enunciado está escrito, mas a prova fica em aberto.</p>
+      </details>
+    </header>
+    <noscript><p>Ative o JavaScript no navegador para escolher as respostas e receber a correção.</p></noscript>
+    <main>
+      <section id="questao" class="cartao" aria-labelledby="titulo-questao">
+        <p id="etiqueta" class="etiqueta"></p>
+        <h2 id="titulo-questao" tabindex="-1"></h2>
+        <pre id="codigo-questao" class="enunciado-lean" hidden></pre>
+        <fieldset aria-labelledby="titulo-questao legenda-opcoes">
+          <legend id="legenda-opcoes">Escolha uma alternativa:</legend>
+          <div id="alternativas" class="alternativas"></div>
+        </fieldset>
+        <div id="retorno" class="retorno" role="status" aria-live="polite" aria-atomic="true"></div>
+        <div class="acoes"><button id="anterior" class="botao" type="button">← Anterior</button><button id="proxima" class="botao principal" type="button">Próxima questão →</button></div>
+      </section>
+      <section id="resultado" class="cartao" aria-labelledby="titulo-resultado" hidden>
+        <p class="etiqueta">Sua leitura dos enunciados</p>
+        <h2 id="titulo-resultado" tabindex="-1">Resultado da atividade</h2>
+        <p id="resultado-numero" class="resultado-numero"></p>
+        <p id="resultado-texto" class="resultado-texto"></p>
+        <div id="resultado-lista" class="resultado-lista"></div>
+        <div class="acoes"><button id="recomecar" class="botao" type="button">Recomeçar</button><button id="revisar" class="botao principal" type="button">Revisar questões</button></div>
+      </section>
+    </main>
+    <footer><span>Cynthia Bortolotto · SEMAT 2026</span><span>Funciona sem internet · As respostas não são enviadas.</span></footer>
+  </div>
+
+  <script id="dados-questoes" type="application/json">
+  [
+  {
+    "categoria": "Lean → Português",
+    "enunciado": "Qual frase preserva as hipóteses e a conclusão deste enunciado?",
+    "codigo": "theorem produto_positivo (a b : Real)\n    (h : 0 < a ∧ 0 < b) : 0 < a * b := by\n  sorry",
+    "alternativas": [
+      {
+        "texto": "Se o produto de dois reais é positivo, então ambos são positivos.",
+        "comentario": "Essa é a recíproca. O produto de −1 por −1 é positivo, embora os dois fatores sejam negativos."
+      },
+      {
+        "texto": "Se dois reais são ambos positivos, então seu produto é positivo.",
+        "comentario": "h reúne as duas hipóteses com ∧. A positividade do produto aparece depois, como conclusão.",
+        "correta": true
+      },
+      {
+        "texto": "Se pelo menos um de dois reais é positivo, então seu produto é positivo.",
+        "comentario": "∧ exige as duas condições. Um fator positivo e outro negativo produzem um produto negativo."
+      },
+      {
+        "texto": "Se dois reais são não negativos, então seu produto é positivo.",
+        "comentario": "0 < a e 0 < b são condições estritas. Com um fator zero, o produto seria zero, não positivo."
+      }
+    ]
+  },
+  {
+    "categoria": "Português → Lean",
+    "enunciado": "“Para cada número real x, existe um número natural N maior que x.” Qual é a tradução direta, preservando os domínios e a ordem das escolhas?",
+    "alternativas": [
+      {
+        "codigo": "∃ N : Nat, ∀ x : Real, x < N",
+        "comentario": "Aqui um único N teria que superar todos os reais. Na frase, N pode depender do real x escolhido."
+      },
+      {
+        "codigo": "∀ x : Real, ∃ N : Real, x < N",
+        "comentario": "Essa afirmação também é verdadeira, mas permite uma cota real. A frase exige que N seja natural."
+      },
+      {
+        "codigo": "∀ x : Real, ∃ N : Nat, x < N",
+        "comentario": "Escolhemos x primeiro; depois, um natural N que pode depender de x. Lean interpreta N como real na comparação.",
+        "correta": true
+      },
+      {
+        "codigo": "∀ N : Nat, ∃ x : Real, x < N",
+        "comentario": "Essa alternativa parte de um natural N e procura um real abaixo dele. A frase parte de um real e procura um natural acima."
+      }
+    ]
+  },
+  {
+    "categoria": "Lean → Português",
+    "enunciado": "O que esta definição expressa, e o que ela não demonstra por si só?",
+    "codigo": "def LimitadaAcima (f : Nat → Real) : Prop :=\n  ∃ M : Real, ∀ n : Nat, f n ≤ M",
+    "alternativas": [
+      {
+        "texto": "Dá nome à propriedade de existir uma mesma cota real para todos os valores de f, sem provar que f a satisfaz.",
+        "comentario": "M é escolhido antes de n e serve para todos os índices. O def nomeia essa propriedade, sem fornecer uma prova.",
+        "correta": true
+      },
+      {
+        "texto": "Dá nome à propriedade de cada valor f n possuir uma cota real que pode variar com n.",
+        "comentario": "Isso corresponderia a ∀ n, ∃ M, f n ≤ M. A definição pede um mesmo M para todos os n."
+      },
+      {
+        "texto": "Constrói uma prova de que toda função dos naturais nos reais tem uma cota superior.",
+        "comentario": "O corpo tem tipo Prop: ele descreve a condição. Uma função como f n = n não tem cota superior real."
+      },
+      {
+        "texto": "Dá nome à propriedade de existir exatamente uma cota superior real para f.",
+        "comentario": "∃ afirma existência, não unicidade. Se M é uma cota superior, M + 1 também é."
+      }
+    ]
+  },
+  {
+    "categoria": "Português → Lean",
+    "enunciado": "Para a função f abaixo, traduza: “Quaisquer duas entradas com a mesma imagem são iguais.”",
+    "codigo": "variable (f : Real → Real)",
+    "alternativas": [
+      {
+        "codigo": "∀ a b : Real, a = b → f a = f b",
+        "comentario": "Essa direção vale para toda função: entradas iguais têm imagens iguais. A frase pede a direção inversa."
+      },
+      {
+        "codigo": "∀ a b : Real, f a = f b ∧ a = b",
+        "comentario": "A conjunção afirma as duas igualdades para quaisquer a e b. A frase exige a igualdade das entradas apenas quando as imagens são iguais."
+      },
+      {
+        "codigo": "∃ a b : Real, f a = f b → a = b",
+        "comentario": "Basta escolher a = b para satisfazer essa existência. A frase impõe a condição a todo par de entradas."
+      },
+      {
+        "codigo": "∀ a b : Real, f a = f b → a = b",
+        "comentario": "A igualdade das imagens é a premissa; a igualdade das entradas é a conclusão. Essa é a condição de injetividade.",
+        "correta": true
+      }
+    ]
+  },
+  {
+    "categoria": "Lean → Português",
+    "enunciado": "u associa um real a cada natural. O que a hipótese h afirma exatamente sobre u e l?",
+    "codigo": "variable (u : Nat → Real) (l : Real)\nvariable (h : ∀ ε : Real, 0 < ε →\n  ∃ n : Nat, |u n - l| < ε)",
+    "alternativas": [
+      {
+        "texto": "Existe um mesmo índice n para o qual a distância de u n a l é menor que todo ε positivo.",
+        "comentario": "Isso trocaria a ordem para ∃ n, ∀ ε. Em h, o índice n pode depender de ε."
+      },
+      {
+        "texto": "Para cada ε positivo, todos os termos a partir de alguma posição ficam a uma distância de l menor que ε.",
+        "comentario": "h pede apenas um índice n. Não exige que todos os termos a partir de certa posição satisfaçam a desigualdade."
+      },
+      {
+        "texto": "Para cada ε positivo, existe algum índice n cuja imagem u n está a uma distância de l menor que ε.",
+        "comentario": "ε vem primeiro; sob a hipótese 0 < ε, escolhemos um n. Não se exige igualdade exata nem uma condição sobre todos os termos seguintes.",
+        "correta": true
+      },
+      {
+        "texto": "Existe um índice n tal que u n é exatamente igual a l.",
+        "comentario": "A desigualdade pode valer com índices diferentes para distâncias cada vez menores, sem que algum valor de u seja exatamente l."
+      }
+    ]
+  },
+  {
+    "categoria": "Português → Lean",
+    "enunciado": "“Para todo natural n, existe um natural m estritamente entre n e n + 2.” Qual fórmula exige que o mesmo m satisfaça as duas desigualdades?",
+    "alternativas": [
+      {
+        "codigo": "∀ n : Nat,\n  (∃ m : Nat, n < m) ∧ (∃ m : Nat, m < n + 2)",
+        "comentario": "As duas existências permitem testemunhas diferentes. A frase exige uma única testemunha que satisfaça as duas condições."
+      },
+      {
+        "codigo": "∀ n : Nat, ∃ m : Nat,\n  n < m ∧ m < n + 2",
+        "comentario": "Para cada n, escolhemos um m e exigimos as duas desigualdades sobre esse mesmo m.",
+        "correta": true
+      },
+      {
+        "codigo": "∃ m : Nat, ∀ n : Nat,\n  n < m ∧ m < n + 2",
+        "comentario": "Um único m teria que servir para todos os naturais n. A frase permite que m dependa de n."
+      },
+      {
+        "codigo": "∀ n : Nat, ∃ m : Nat,\n  n < m → m < n + 2",
+        "comentario": "A implicação não exige n < m. Por exemplo, escolher m = n torna a premissa falsa; a conjunção exige ambas as desigualdades."
+      }
+    ]
+  },
+  {
+    "categoria": "Lean → Português",
+    "enunciado": "Qual leitura identifica corretamente a ordem das funções na hipótese e a função descrita pela conclusão?",
+    "codigo": "theorem recuperar (f g : Nat → Nat)\n    (h : ∀ n : Nat, g (f n) = n) :\n    ∀ a b : Nat, f a = f b → a = b := by\n  sorry",
+    "alternativas": [
+      {
+        "texto": "Se aplicar g e depois f sempre recupera a entrada, então f tem entradas iguais sempre que as imagens são iguais.",
+        "comentario": "g (f n) aplica primeiro f e depois g. A alternativa inverte a ordem da hipótese."
+      },
+      {
+        "texto": "Se aplicar f e depois g sempre recupera a entrada, então g tem entradas iguais sempre que as imagens são iguais.",
+        "comentario": "A hipótese foi lida corretamente, mas a conclusão compara f a e f b. Ela trata de f, não de g."
+      },
+      {
+        "texto": "Se aplicar f e depois g sempre recupera a entrada, então todo natural é imagem de algum natural por f.",
+        "comentario": "Essa seria a sobrejetividade de f. A conclusão escrita diz que imagens iguais por f exigem entradas iguais."
+      },
+      {
+        "texto": "Se aplicar f e depois g sempre recupera a entrada, então entradas com a mesma imagem por f são iguais.",
+        "comentario": "g desfaz a aplicação de f. A conclusão afirma a injetividade de f; não afirma que todo natural seja atingido por f.",
+        "correta": true
+      }
+    ]
+  },
+  {
+    "categoria": "Português → Lean",
+    "enunciado": "A e B são conjuntos de naturais. Traduza: “Todo elemento de A pertence a B, mas existe um elemento de B que não pertence a A.”",
+    "codigo": "variable (A B : Set Nat)",
+    "alternativas": [
+      {
+        "codigo": "(∀ x : Nat, x ∈ A → x ∈ B) ∧\n  ∃ y : Nat, y ∈ B ∧ y ∉ A",
+        "comentario": "A primeira parte exprime A ⊆ B. A segunda exige um elemento de B fora de A, portanto a inclusão é estrita.",
+        "correta": true
+      },
+      {
+        "codigo": "(∀ x : Nat, x ∈ B → x ∈ A) ∧\n  ∃ y : Nat, y ∈ B ∧ y ∉ A",
+        "comentario": "A primeira implicação foi invertida e afirma B ⊆ A. Isso contradiz a existência, na segunda parte, de um elemento de B fora de A."
+      },
+      {
+        "codigo": "(∀ x : Nat, x ∈ A → x ∈ B) ∧\n  ∃ y : Nat, y ∈ B → y ∉ A",
+        "comentario": "A implicação não exige que y pertença a B. Escolher um y fora de B já satisfaz essa parte; a frase exige pertinência a B e não pertinência a A."
+      },
+      {
+        "codigo": "(∀ x : Nat, x ∈ A → x ∈ B) ∧\n  ∃ y : Nat, y ∈ B ∧ y ∈ A",
+        "comentario": "Aqui a testemunha pertence aos dois conjuntos. A frase pede um elemento de B fora de A; esta opção permite, por exemplo, A = B = {1}."
+      }
+    ]
+  },
+  {
+    "categoria": "Português → Lean",
+    "enunciado": "Fixado um natural n > 2, traduza a afirmação de Fermat: “Não existem naturais positivos a, b e c tais que aⁿ + bⁿ = cⁿ.”",
+    "codigo": "variable (n : Nat) (hn : 2 < n)",
+    "alternativas": [
+      {
+        "codigo": "∃ a b c : Nat,\n  0 < a ∧ 0 < b ∧ 0 < c ∧ a ^ n + b ^ n ≠ c ^ n",
+        "comentario": "Essa fórmula pede apenas uma tripla que não seja solução. Fermat exclui todas as soluções positivas."
+      },
+      {
+        "codigo": "¬ ∃ a b c : Nat,\n  0 < a ∧ 0 < b ∧ 0 < c ∧ a ^ n + b ^ n = c ^ n",
+        "comentario": "¬ nega a existência de uma tripla que satisfaça, simultaneamente, a positividade e a equação.",
+        "correta": true
+      },
+      {
+        "codigo": "¬ ∃ a b c : Nat,\n  a ^ n + b ^ n = c ^ n",
+        "comentario": "Faltam as condições de positividade. Com zero permitido, a = 0 e b = c = 1 dão uma solução."
+      },
+      {
+        "codigo": "∀ a b c : Nat,\n  0 < a ∧ 0 < b ∧ 0 < c ∧ a ^ n + b ^ n ≠ c ^ n",
+        "comentario": "A conjunção afirma que todos os naturais escolhidos são positivos. Para usar ∀, a positividade deveria ser uma hipótese, não parte da conclusão."
+      }
+    ]
+  },
+  {
+    "categoria": "Enunciado e prova",
+    "enunciado": "Qual trecho fornece uma prova completa de que identidadeNat n = n para todo natural n?",
+    "codigo": "def identidadeNat (n : Nat) : Nat := n",
+    "alternativas": [
+      {
+        "codigo": "def identidade_reflexiva : Prop :=\n  ∀ n : Nat, identidadeNat n = n",
+        "comentario": "O tipo declarado é Prop, e o corpo é o enunciado universal. Isso define uma proposição, não uma prova dela."
+      },
+      {
+        "codigo": "theorem identidade_reflexiva :\n    ∀ n : Nat, identidadeNat n = n := by\n  sorry",
+        "comentario": "A declaração pede uma prova, mas sorry deixa uma lacuna. O nome theorem não garante que a prova esteja completa."
+      },
+      {
+        "codigo": "def identidade_reflexiva :\n    ∀ n : Nat, identidadeNat n = n := by\n  intro n\n  rfl",
+        "comentario": "Aqui o tipo é a proposição a provar. intro escolhe um natural arbitrário e rfl prova a igualdade. def também pode nomear uma prova.",
+        "correta": true
+      },
+      {
+        "codigo": "#check (∀ n : Nat, identidadeNat n = n)",
+        "comentario": "#check apenas verifica o tipo dessa expressão: Prop. Ele não constrói uma prova do enunciado."
+      }
+    ]
+  }
+]
+  </script>
+  <script>
+    "use strict";
+    const questoes = JSON.parse(document.getElementById("dados-questoes").textContent);
+    const respostas = Array(questoes.length).fill(null);
+    const letras = ["A", "B", "C", "D"];
+    let atual = 0;
+    const elemento = id => document.getElementById(id);
+    const acertou = indice => respostas[indice] !== null && questoes[indice].alternativas[respostas[indice]].correta === true;
+
+    function atualizarProgresso() {
+      elemento("placar").textContent = `${questoes.filter((_, i) => acertou(i)).length} / ${questoes.length}`;
+      document.querySelectorAll(".numero").forEach((botao, i) => {
+        const respondida = respostas[i] !== null;
+        botao.classList.toggle("correta", acertou(i));
+        botao.classList.toggle("incorreta", respondida && !acertou(i));
+        botao.setAttribute("aria-label", `Questão ${i + 1}: ${respondida ? (acertou(i) ? "correta" : "revisar") : "não respondida"}`);
+        if (i === atual && !elemento("questao").hidden) botao.setAttribute("aria-current", "step");
+        else botao.removeAttribute("aria-current");
+      });
+    }
+
+    function mostrarRetorno() {
+      const escolhido = respostas[atual];
+      const retorno = elemento("retorno");
+      retorno.replaceChildren();
+      retorno.className = "retorno";
+      document.querySelectorAll(".alternativa").forEach((rotulo, i) => {
+        rotulo.classList.toggle("correta", escolhido === i && acertou(atual));
+        rotulo.classList.toggle("incorreta", escolhido === i && !acertou(atual));
+      });
+      if (escolhido === null) {
+        retorno.textContent = "Ao escolher uma alternativa, você verá a correção aqui.";
+        return;
+      }
+      const opcao = questoes[atual].alternativas[escolhido];
+      retorno.classList.add(opcao.correta ? "correta" : "incorreta");
+      const titulo = document.createElement("strong");
+      titulo.textContent = opcao.correta ? "✓ Correto!" : "✕ Ainda não. Tente novamente.";
+      const comentario = document.createElement("span");
+      comentario.textContent = opcao.comentario;
+      retorno.append(titulo, comentario);
+    }
+
+    function mostrarQuestao(indice, focar = true) {
+      atual = indice;
+      const questao = questoes[atual];
+      elemento("questao").hidden = false;
+      elemento("resultado").hidden = true;
+      elemento("etiqueta").textContent = `Questão ${atual + 1} de ${questoes.length} · ${questao.categoria}`;
+      elemento("titulo-questao").textContent = questao.enunciado;
+      elemento("codigo-questao").hidden = !questao.codigo;
+      elemento("codigo-questao").textContent = questao.codigo || "";
+      elemento("alternativas").replaceChildren();
+      questao.alternativas.forEach((opcao, i) => {
+        const rotulo = document.createElement("label");
+        rotulo.className = "alternativa";
+        const entrada = document.createElement("input");
+        entrada.type = "radio";
+        entrada.name = "alternativa";
+        entrada.value = String(i);
+        entrada.checked = respostas[atual] === i;
+        entrada.addEventListener("change", () => {
+          respostas[atual] = i;
+          mostrarRetorno();
+          atualizarProgresso();
+        });
+        const letra = document.createElement("span");
+        letra.className = "letra";
+        letra.textContent = letras[i];
+        const conteudo = document.createElement(opcao.codigo ? "code" : "span");
+        conteudo.className = "conteudo";
+        conteudo.textContent = opcao.codigo || opcao.texto;
+        rotulo.append(entrada, letra, conteudo);
+        elemento("alternativas").append(rotulo);
+      });
+      elemento("anterior").disabled = atual === 0;
+      elemento("proxima").textContent = atual === questoes.length - 1 ? "Ver resultado →" : "Próxima questão →";
+      mostrarRetorno();
+      atualizarProgresso();
+      if (focar) elemento("titulo-questao").focus();
+    }
+
+    function mostrarResultado() {
+      elemento("questao").hidden = true;
+      elemento("resultado").hidden = false;
+      const acertos = questoes.filter((_, i) => acertou(i)).length;
+      const respondidas = respostas.filter(resposta => resposta !== null).length;
+      elemento("resultado-numero").textContent = `${acertos} / ${questoes.length}`;
+      elemento("resultado-texto").textContent = acertos === questoes.length
+        ? "Todas corretas! Volte ao Aula.lean para escrever seus próprios enunciados na pausa após a seção 8."
+        : `${respondidas} de ${questoes.length} questões respondidas. Revise as respostas incorretas e complete as que faltam. Você pode tentar novamente.`;
+      elemento("resultado-lista").replaceChildren();
+      questoes.forEach((questao, i) => {
+        const botao = document.createElement("button");
+        botao.type = "button";
+        const estado = respostas[i] === null ? "" : acertou(i) ? "correta" : "incorreta";
+        botao.className = `revisao ${estado}`;
+        botao.textContent = `${String(i + 1).padStart(2, "0")} · ${respostas[i] === null ? "Não respondida" : acertou(i) ? "✓ Correta" : "✕ Revisar"} · ${questao.categoria}`;
+        botao.addEventListener("click", () => mostrarQuestao(i));
+        elemento("resultado-lista").append(botao);
+      });
+      atualizarProgresso();
+      elemento("titulo-resultado").focus();
+    }
+
+    questoes.forEach((_, i) => {
+      const botao = document.createElement("button");
+      botao.type = "button";
+      botao.className = "numero";
+      botao.textContent = String(i + 1).padStart(2, "0");
+      botao.addEventListener("click", () => mostrarQuestao(i));
+      elemento("navegacao").append(botao);
+    });
+    elemento("anterior").addEventListener("click", () => mostrarQuestao(atual - 1));
+    elemento("proxima").addEventListener("click", () => atual === questoes.length - 1 ? mostrarResultado() : mostrarQuestao(atual + 1));
+    elemento("revisar").addEventListener("click", () => {
+      const primeiraPendente = questoes.findIndex((_, i) => !acertou(i));
+      mostrarQuestao(primeiraPendente < 0 ? 0 : primeiraPendente);
+    });
+    elemento("recomecar").addEventListener("click", () => {
+      respostas.fill(null);
+      mostrarQuestao(0);
+    });
+    mostrarQuestao(0, false);
+  </script>
+</body>
+</html>

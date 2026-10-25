@@ -1,0 +1,23 @@
+name = "semat"
+defaultTargets = ["Aula", "TesteInstalacao"]
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4"
+rev = "v4.30.0"
+
+[[lean_lib]]
+name = "Aula"
+srcDir = "participantes"
+
+[[lean_lib]]
+name = "TesteInstalacao"
+srcDir = "participantes"
+
+[[lean_lib]]
+name = "Exercicios"
+srcDir = "participantes"
+
+[[lean_lib]]
+name = "ExerciciosMathlib"
+srcDir = "participantes"
